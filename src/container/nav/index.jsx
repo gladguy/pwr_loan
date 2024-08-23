@@ -280,8 +280,6 @@ const Nav = (props) => {
         }
       }
 
-      dispatch(setActiveChain(activeChain));
-
       if (isInit) {
         setWalletConnection({
           ...walletConnection,
@@ -295,10 +293,19 @@ const Nav = (props) => {
           ...activeAddresses,
           [META_WALLET_KEY]: accounts[0],
         });
+        dispatch(setActiveChain(activeChain));
+      } else {
+        await verifyAddress();
       }
     } catch (error) {
       console.error("User denied account access", error);
     }
+  };
+
+  const clearConnectionStates = () => {
+    setWalletConnection({});
+    setActiveConnections([]);
+    setActiveAddresses({});
   };
 
   const connectWallet = async (walletName) => {
@@ -470,6 +477,74 @@ const Nav = (props) => {
     }
   };
 
+  const verifyAddress = async () => {
+    const chainNumber = activeChain === "BTC" ? EthchainNumber : BtcChainNumber;
+    const chain = activeChain === "BTC" ? "ETH" : "BTC";
+    const web3 = new Web3(window.ethereum);
+    let networkId = await web3.eth.net.getId();
+
+    if (Number(networkId) === chainNumber) {
+      try {
+        dispatch(setLoading(true));
+        const API = agentCreator(storageIdlFactory, storage);
+        const btcAddress = xverseAddress
+          ? xverseAddress
+          : unisatAddress
+          ? unisatAddress
+          : magicEdenAddress;
+
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(
+          IndexContractAddress,
+          indexJson,
+          signer
+        );
+        const isAcExist = await contract.getBitcoinAddressId(metaAddress);
+        const isAccountExistInABI = Number(isAcExist.toString());
+
+        let verifyAddress = await API.verifyAddressPair({
+          chain_id: chainNumber,
+          bitcoinAddress: btcAddress,
+          ethereumAddress: metaAddress,
+        });
+        verifyAddress = Number(verifyAddress);
+
+        if (verifyAddress === 0 && isAccountExistInABI) {
+          dispatch(setActiveChain(chain));
+          dispatch(setLoading(false));
+          onClose();
+        } else if (verifyAddress === 3) {
+          const storeAddress = await API.storeAddress({
+            chain_id: chainNumber,
+            bitcoinAddress: btcAddress,
+            ethereumAddress: metaAddress,
+          });
+
+          if (!isAccountExistInABI) {
+            const saveResult = await contract.saveBitcoinAddress(
+              Number(storeAddress),
+              metaAddress
+            );
+            if (saveResult.hash) {
+              Notify("success", "Account creation success!", 3000);
+              dispatch(setActiveChain(chain));
+              onClose();
+            }
+          }
+        }
+
+        dispatch(setLoading(false));
+      } catch (error) {
+        dispatch(clearStates());
+        dispatch(setActiveChain("BTC"));
+        successMessageNotify("Connection aborted, logging you out!");
+        dispatch(clearWalletState());
+        console.log("Switching connection error", error);
+      }
+    }
+  };
+
   const handleConnectionFinish = async () => {
     const chainNumber = activeChain === "BTC" ? BtcChainNumber : EthchainNumber;
     collapseConnectedModal();
@@ -512,6 +587,7 @@ const Nav = (props) => {
           "warning",
           `Account not found, try connecting ${btcAddress} BTC account!`
         );
+        clearConnectionStates();
       } else if (verifyAddress === 2) {
         const ethAddress = await API.getByBitcoinAddress({
           chainId: chainNumber,
@@ -521,6 +597,7 @@ const Nav = (props) => {
           "warning",
           `Account not found, try connecting ${ethAddress} ETH account!`
         );
+        clearConnectionStates();
       } else if (verifyAddress === 3) {
         const storeAddress = await API.storeAddress({
           chain_id: chainNumber,
@@ -550,9 +627,7 @@ const Nav = (props) => {
       dispatch(setLoading(false));
     } catch (error) {
       dispatch(setLoading(false));
-      setWalletConnection({});
-      setActiveConnections([]);
-      setActiveAddresses({});
+      clearConnectionStates();
       console.log("finish connection error", error);
     }
   };
@@ -960,8 +1035,7 @@ const Nav = (props) => {
         footer={""}
         onCancel={() => {
           collapseConnectedModal();
-          setWalletConnection({});
-          setActiveConnections([]);
+          clearConnectionStates();
         }}
         width={breakPoint.xs ? "100%" : "35%"}
       >
@@ -1179,8 +1253,7 @@ const Nav = (props) => {
                       dispatch(setActiveChain("BTC"));
                       successMessageNotify("Your are signed out!");
                       dispatch(clearWalletState());
-                      setWalletConnection({});
-                      setActiveConnections([]);
+                      clearConnectionStates();
                       onClose();
                     }}
                     title={
@@ -1207,12 +1280,21 @@ const Nav = (props) => {
           <Row justify={"space-between"} align={"middle"}>
             <Col>
               <Flex align="center">
-                <img
-                  src={Eth}
-                  alt="logo"
-                  style={{ marginRight: "40px" }}
-                  width={20}
-                />
+                {activeChain === "BTC" ? (
+                  <img
+                    src={Bitcoin}
+                    alt="logo"
+                    style={{ marginRight: "40px" }}
+                    width={25}
+                  />
+                ) : (
+                  <img
+                    src={Eth}
+                    alt="logo"
+                    style={{ marginRight: "40px" }}
+                    width={20}
+                  />
+                )}
                 <Flex vertical>
                   <Text className="text-color-two font-medium">Payments</Text>
                   <Text className="text-color-one font-xsmall">
@@ -1330,8 +1412,7 @@ const Nav = (props) => {
                     dispatch(setActiveChain("BTC"));
                     successMessageNotify("Your are signed out!");
                     dispatch(clearWalletState());
-                    setWalletConnection({});
-                    setActiveConnections([]);
+                    clearConnectionStates();
                     onClose();
                   }}
                   title={
