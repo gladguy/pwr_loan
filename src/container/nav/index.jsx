@@ -513,6 +513,7 @@ const Nav = (props) => {
         if (verifyAddress === 0 && isAccountExistInABI) {
           dispatch(setActiveChain(chain));
           dispatch(setLoading(false));
+          Notify("success", `Switched to ${chain} network!`, 3000);
           onClose();
         } else if (verifyAddress === 3) {
           const storeAddress = await API.storeAddress({
@@ -540,6 +541,8 @@ const Nav = (props) => {
         dispatch(setActiveChain("BTC"));
         successMessageNotify("Connection aborted, logging you out!");
         dispatch(clearWalletState());
+        dispatch(setLoading(false));
+        onClose();
         console.log("Switching connection error", error);
       }
     }
@@ -575,6 +578,8 @@ const Nav = (props) => {
         ethereumAddress: metaAddress,
       });
       verifyAddress = Number(verifyAddress);
+      console.log("verifyAddress", verifyAddress);
+      console.log(("isAccountExistInABI", isAccountExistInABI));
 
       if (verifyAddress === 0 && isAccountExistInABI) {
         isConnectionExist = true;
@@ -598,7 +603,10 @@ const Nav = (props) => {
           `Account not found, try connecting ${ethAddress} ETH account!`
         );
         clearConnectionStates();
-      } else if (verifyAddress === 3) {
+      } else if (
+        verifyAddress === 3 ||
+        (verifyAddress === 0 && !isAccountExistInABI)
+      ) {
         const storeAddress = await API.storeAddress({
           chain_id: chainNumber,
           bitcoinAddress: btcAddress,

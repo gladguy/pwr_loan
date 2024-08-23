@@ -15,7 +15,7 @@ const LoadingWrapper = ({ children }) => {
           src={activeChain === "BTC" ? bitcoin : ethereum}
           alt=""
           width="60%"
-          height={activeChain === "BTC" ? "60%" : "80%"}
+          height={activeChain === "BTC" ? "60%" : "120%"}
         ></img>
       }
       spinning={loading}
