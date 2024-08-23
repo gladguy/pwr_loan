@@ -40,8 +40,8 @@ Check out the live demo [here](https://pwr-chain-ordinalsloan.web.app/).
 To get started with this project, clone the repository and follow the instructions in the smart contract directories to deploy the contracts on the PWR Chain.
 
 ```bash
-git clone https://github.com/your-repo/p2p-borrowing-lending-pwrchain.git
-cd p2p-borrowing-lending-pwrchain
+git clone https://github.com/gladguy/pwr_loan.git
+cd pwr_loan
 ```
 
 ## License
