@@ -1,7 +1,3 @@
-Here's a README for your GitHub project:
-
----
-
 # P2P Borrowing and Lending Protocol on PWR Chain
 
 This project is a Peer-to-Peer (P2P) borrowing and lending protocol built on the PWR Chain, allowing users to borrow BTC or Ethereum using their Ordinals as collateral. Lenders can lend their BTC or Ethereum to earn interest (APY) on their Fusecoin, with rates that can go as high as 350%.
